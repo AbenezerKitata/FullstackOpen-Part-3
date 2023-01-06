@@ -39,12 +39,21 @@ let persons = [
       "number": "78-99-109825"
     }
 ]
-
+const now = new Date()
 app.use(express.json())
 
 app.get('/', (req, res) => {
-  res.send('<h1>Hello World!</h1>')
+    res.send('<h1>Hello World!</h1>')
 })
+
+app.get('/info', (req, res) => {
+    res.send(` 
+    <div>
+    <p> Phonebook has info for ${persons.length} people </p>
+    <p>${now}</p>
+    </div>
+    `)
+  })
 
 const generateId = () => {
   const maxId = persons.length > 0
