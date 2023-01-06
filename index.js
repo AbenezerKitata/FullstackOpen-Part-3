@@ -72,6 +72,14 @@ app.post('/api/persons', (request, response) => {
       error: 'number missing' 
     })
   }
+  const matchingName = persons.find(person=> person.name.toLowerCase() === body.name.toLowerCase() )
+  const matchingNumber = persons.find(person=>person.number === body.number)
+
+  if(matchingName || matchingNumber){
+    return response.status(400).json({
+        error: 'name and number must be unique'
+    })
+  }
 
   const contact = {
     id: getRandomInt(10000),
