@@ -94,6 +94,7 @@ app.delete('/api/persons/:id', (request, response) => {
   response.status(204).end()
 })
 
+// functionality to show by id
 app.get('/api/persons/:id', (request, response) => {
   const id = Number(request.params.id)
   const contact = persons.find(contact => contact.id === id)
