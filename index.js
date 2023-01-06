@@ -55,27 +55,28 @@ app.get('/info', (req, res) => {
     `)
   })
 
-const generateId = () => {
-  const maxId = persons.length > 0
-    ? Math.max(...persons.map(n => n.id))
-    : 0
-  return maxId + 1
-}
-
+const getRandomInt = (max)=> {
+    return Math.floor(Math.random() * max);
+  }
+// for posting on the api
 app.post('/api/persons', (request, response) => {
   const body = request.body
 
-  if (!body.content) {
+  if (!body.name) {
     return response.status(400).json({ 
-      error: 'content missing' 
+      error: 'name missing' 
+    })
+  }
+  if (!body.number) {
+    return response.status(400).json({ 
+      error: 'number missing' 
     })
   }
 
   const contact = {
-    content: body.content,
-    important: body.important || false,
-    date: new Date(),
-    id: generateId(),
+    id: getRandomInt(10000),
+    name: body.name,
+    number: body.number,
   }
 
   persons = persons.concat(contact)
