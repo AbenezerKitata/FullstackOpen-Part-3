@@ -82,11 +82,11 @@ app.post('/api/persons', (request, response) => {
 
   response.json(contact)
 })
-
+// functionality to get all persons
 app.get('/api/persons', (req, res) => {
   res.json(persons)
 })
-
+// functionality to delete person
 app.delete('/api/persons/:id', (request, response) => {
   const id = Number(request.params.id)
   persons = persons.filter(contact => contact.id !== id)
@@ -94,7 +94,7 @@ app.delete('/api/persons/:id', (request, response) => {
   response.status(204).end()
 })
 
-// functionality to show by id
+// functionality to show by id and show 404 when an id does not exist
 app.get('/api/persons/:id', (request, response) => {
   const id = Number(request.params.id)
   const contact = persons.find(contact => contact.id === id)
