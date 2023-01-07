@@ -48,7 +48,16 @@ const now = new Date()
 app.use(express.json())
 
 
-app.use(morgan('tiny'))
+app.use(morgan((tokens, req, res)=>{
+  const method = tokens.method(req, res)
+  const url = tokens.url(req, res)
+  const status = tokens.status(req, res)
+  const len =  tokens.res(req, res, 'content-length')
+  const time = tokens['response-time'](req, res)
+  if(method === 'POST'){
+    console.log(method,url, status, len,'-', time, 'ms', JSON.stringify(req.body))
+  }
+}))
 
 
 app.get('/', (req, res) => {
