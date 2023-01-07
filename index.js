@@ -1,6 +1,8 @@
 const express = require('express')
-const app = express()
+const morgan = require('morgan')
 
+
+const app = express()
 let persons = [
     { 
       "id": 1,
@@ -39,8 +41,15 @@ let persons = [
       "number": "78-99-109825"
     }
 ]
+
+
+
 const now = new Date()
 app.use(express.json())
+
+
+app.use(morgan('tiny'))
+
 
 app.get('/', (req, res) => {
     res.send('<h1>Hello World!</h1>')
@@ -91,6 +100,8 @@ app.post('/api/persons', (request, response) => {
 
   response.json(contact)
 })
+
+
 // functionality to get all persons
 app.get('/api/persons', (req, res) => {
   res.json(persons)
@@ -114,6 +125,12 @@ app.get('/api/persons/:id', (request, response) => {
     response.status(404).end()
   }
 })
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: 'unknown endpoint' })
+}
+
+app.use(unknownEndpoint)
 
 const PORT = 3001
 app.listen(PORT, () => {
