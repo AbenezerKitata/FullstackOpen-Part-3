@@ -2,45 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const Phonebook = require("./models/people");
-
 const app = express();
-let persons = [
-  {
-    id: 1,
-    name: "Arto Hellas",
-    number: "040-123456",
-  },
-  {
-    id: 2,
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-  },
-  {
-    id: 3,
-    name: "Dan Abramov",
-    number: "12-43-234345",
-  },
-  {
-    id: 4,
-    name: "Mary Poppendieck",
-    number: "63-23-6423122",
-  },
-  {
-    id: 5,
-    name: "Timbuktu Helenas",
-    number: "38-55-989652",
-  },
-  {
-    id: 6,
-    name: "Harold Davidson",
-    number: "25-99-789456",
-  },
-  {
-    id: 7,
-    name: "Chikasan Hambertus",
-    number: "78-99-109825",
-  },
-];
 const now = new Date();
 const requestLogger = (request, response, next) => {
   console.log("Method:", request.method);
@@ -74,19 +36,9 @@ app.get("/info", (req, res) => {
 //   return Math.floor(Math.random() * max);
 // };
 // for posting on the api
-app.post("/api/persons", (request, response) => {
+app.post("/api/persons", (request, response, next) => {
   const body = request.body;
 
-  if (!body.name) {
-    return response.status(400).json({
-      error: "name missing",
-    });
-  }
-  if (!body.number) {
-    return response.status(400).json({
-      error: "number missing",
-    });
-  }
   Phonebook.find({}).then((people) => {
     const matchingName = people.find(
       (person) => person.name.toLowerCase() === body.name.toLowerCase()
@@ -101,14 +53,16 @@ app.post("/api/persons", (request, response) => {
     //   });
     // }
     const contact = new Phonebook({
-      // id: getRandomInt(10000),
       name: body.name,
       number: body.number,
     });
 
-    contact.save().then((savedContact) => {
-      response.json(savedContact);
-    });
+    contact
+      .save()
+      .then((savedContact) => {
+        response.json(savedContact);
+      })
+      .catch((error) => next(error));
   });
 });
 
@@ -131,7 +85,6 @@ app.get("/api/persons", (req, res) => {
 app.delete("/api/persons/:id", (request, response, next) => {
   Phonebook.findByIdAndRemove(request.params.id)
     .then((result) => {
-      console.log(result.name);
       response.status(204).end();
     })
     .catch((error) => next(error));
@@ -151,13 +104,13 @@ app.get("/api/persons/:id", (request, response, next) => {
 });
 
 app.put("/api/persons/:id", (request, response, next) => {
-  const body = request.body;
+  const { name, number } = request.body;
 
-  const person = {
-    name: body.name,
-    number: body.number,
-  };
-  Phonebook.findByIdAndUpdate(request.params.id, person, { new: true })
+  Phonebook.findByIdAndUpdate(
+    request.params.id,
+    { name, number },
+    { new: true, runValidators: true, context: "query" }
+  )
     .then((updatedPerson) => {
       response.json(updatedPerson);
     })
@@ -171,12 +124,13 @@ const unknownEndpoint = (request, response) => {
 app.use(unknownEndpoint);
 
 const errorHandler = (error, request, response, next) => {
-  console.error(error.name);
+  console.error("name of error", error.name);
 
   if (error.name === "CastError") {
     return response.status(400).send({ error: "malformatted id" });
+  } else if (error.name === "ValidationError") {
+    return response.status(400).json({ error: error.message });
   }
-
   next(error);
 };
 
