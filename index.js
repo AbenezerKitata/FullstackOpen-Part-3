@@ -42,22 +42,32 @@ let persons = [
   },
 ];
 const now = new Date();
+const requestLogger = (request, response, next) => {
+  console.log("Method:", request.method);
+  console.log("Path:  ", request.path);
+  console.log("Body:  ", request.body);
+  console.log("---");
+  next();
+};
 
 app.use(express.static("build"));
 app.use(cors());
 app.use(express.json());
+app.use(requestLogger);
 
 app.get("/hello", (req, res) => {
   res.send("<h1>Hello World!</h1>");
 });
 
 app.get("/info", (req, res) => {
-  res.send(` 
-    <div>
-    <p> Phonebook has info for ${persons.length} people </p>
-    <p>${now}</p>
-    </div>
-    `);
+  Phonebook.find({}).then((people) => {
+    res.send(` 
+      <div>
+      <p> Phonebook has info for ${people.length} people </p>
+      <p>${now}</p>
+      </div>
+      `);
+  });
 });
 
 // const getRandomInt = (max) => {
@@ -118,15 +128,17 @@ app.get("/api/persons", (req, res) => {
   });
 });
 // functionality to delete person
-app.delete("/api/persons/:id", (request, response) => {
-  const id = Number(request.params.id);
-  persons = persons.filter((contact) => contact.id !== id);
-
-  response.status(204).end();
+app.delete("/api/persons/:id", (request, response, next) => {
+  Phonebook.findByIdAndRemove(request.params.id)
+    .then((result) => {
+      console.log(result.name);
+      response.status(204).end();
+    })
+    .catch((error) => next(error));
 });
 
 // functionality to show by id and show 404 when an id does not exist
-app.get("/api/persons/:id", (request, response) => {
+app.get("/api/persons/:id", (request, response, next) => {
   Phonebook.findById(request.params.id)
     .then((people) => {
       if (people) {
@@ -135,10 +147,21 @@ app.get("/api/persons/:id", (request, response) => {
         response.status(404).end();
       }
     })
-    .catch((error) => {
-      console.log(error);
-      response.status(500).end();
-    });
+    .catch((error) => next(error));
+});
+
+app.put("/api/persons/:id", (request, response, next) => {
+  const body = request.body;
+
+  const person = {
+    name: body.name,
+    number: body.number,
+  };
+  Phonebook.findByIdAndUpdate(request.params.id, person, { new: true })
+    .then((updatedPerson) => {
+      response.json(updatedPerson);
+    })
+    .catch((error) => next(error));
 });
 
 const unknownEndpoint = (request, response) => {
@@ -147,6 +170,17 @@ const unknownEndpoint = (request, response) => {
 
 app.use(unknownEndpoint);
 
+const errorHandler = (error, request, response, next) => {
+  console.error(error.name);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  }
+
+  next(error);
+};
+
+app.use(errorHandler);
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
