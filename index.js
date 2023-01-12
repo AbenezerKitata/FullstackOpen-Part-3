@@ -1,5 +1,7 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const Phonebook = require("./models/people");
 
 const app = express();
 let persons = [
@@ -58,9 +60,9 @@ app.get("/info", (req, res) => {
     `);
 });
 
-const getRandomInt = (max) => {
-  return Math.floor(Math.random() * max);
-};
+// const getRandomInt = (max) => {
+//   return Math.floor(Math.random() * max);
+// };
 // for posting on the api
 app.post("/api/persons", (request, response) => {
   const body = request.body;
@@ -75,33 +77,45 @@ app.post("/api/persons", (request, response) => {
       error: "number missing",
     });
   }
-  const matchingName = persons.find(
-    (person) => person.name.toLowerCase() === body.name.toLowerCase()
-  );
-  const matchingNumber = persons.find(
-    (person) => person.number === body.number
-  );
+  Phonebook.find({}).then((people) => {
+    const matchingName = people.find(
+      (person) => person.name.toLowerCase() === body.name.toLowerCase()
+    );
+    const matchingNumber = people.find(
+      (person) => person.number === body.number
+    );
 
-  if (matchingName || matchingNumber) {
-    return response.status(400).json({
-      error: "name and number must be unique",
+    // if (matchingName || matchingNumber) {
+    //   return response.status(400).json({
+    //     error: "name and number must be unique",
+    //   });
+    // }
+    const contact = new Phonebook({
+      // id: getRandomInt(10000),
+      name: body.name,
+      number: body.number,
     });
-  }
 
-  const contact = {
-    id: getRandomInt(10000),
-    name: body.name,
-    number: body.number,
-  };
-
-  persons = persons.concat(contact);
-
-  response.json(contact);
+    contact.save().then((savedContact) => {
+      response.json(savedContact);
+    });
+  });
 });
 
 // functionality to get all persons
 app.get("/api/persons", (req, res) => {
-  res.json(persons);
+  Phonebook.find({}).then((people) => {
+    let container = [];
+    people.map((p) => {
+      const names = p.name;
+      const numbers = p.number;
+      const obj = { name: names, numbers: numbers };
+
+      container.push(obj);
+    });
+
+    res.json(people);
+  });
 });
 // functionality to delete person
 app.delete("/api/persons/:id", (request, response) => {
@@ -113,14 +127,18 @@ app.delete("/api/persons/:id", (request, response) => {
 
 // functionality to show by id and show 404 when an id does not exist
 app.get("/api/persons/:id", (request, response) => {
-  const id = Number(request.params.id);
-  const contact = persons.find((contact) => contact.id === id);
-
-  if (contact) {
-    response.json(contact);
-  } else {
-    response.status(404).end();
-  }
+  Phonebook.findById(request.params.id)
+    .then((people) => {
+      if (people) {
+        response.json(people);
+      } else {
+        response.status(404).end();
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+      response.status(500).end();
+    });
 });
 
 const unknownEndpoint = (request, response) => {
