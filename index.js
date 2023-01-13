@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const Phonebook = require("./models/people");
+
 const app = express();
 const now = new Date();
 const requestLogger = (request, response, next) => {
@@ -37,7 +38,7 @@ app.get("/info", (req, res) => {
 // };
 // for posting on the api
 app.post("/api/persons", (request, response, next) => {
-  const body = request.body;
+  const { body } = request;
 
   Phonebook.find({}).then((people) => {
     const matchingName = people.find(
@@ -47,11 +48,11 @@ app.post("/api/persons", (request, response, next) => {
       (person) => person.number === body.number
     );
 
-    // if (matchingName || matchingNumber) {
-    //   return response.status(400).json({
-    //     error: "name and number must be unique",
-    //   });
-    // }
+    if (matchingName || matchingNumber) {
+      return response.status(400).json({
+        error: "name and number must be unique",
+      });
+    }
     const contact = new Phonebook({
       name: body.name,
       number: body.number,
@@ -69,11 +70,11 @@ app.post("/api/persons", (request, response, next) => {
 // functionality to get all persons
 app.get("/api/persons", (req, res) => {
   Phonebook.find({}).then((people) => {
-    let container = [];
+    const container = [];
     people.map((p) => {
       const names = p.name;
       const numbers = p.number;
-      const obj = { name: names, numbers: numbers };
+      const obj = { name: names, numbers };
 
       container.push(obj);
     });
@@ -84,7 +85,7 @@ app.get("/api/persons", (req, res) => {
 // functionality to delete person
 app.delete("/api/persons/:id", (request, response, next) => {
   Phonebook.findByIdAndRemove(request.params.id)
-    .then((result) => {
+    .then((_result) => {
       response.status(204).end();
     })
     .catch((error) => next(error));
@@ -128,7 +129,8 @@ const errorHandler = (error, request, response, next) => {
 
   if (error.name === "CastError") {
     return response.status(400).send({ error: "malformatted id" });
-  } else if (error.name === "ValidationError") {
+  }
+  if (error.name === "ValidationError") {
     return response.status(400).json({ error: error.message });
   }
   next(error);

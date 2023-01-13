@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+
 if (process.argv.length < 3) {
   console.log(
     "Please provide the password as an argument: node mongo.js <password>"
@@ -12,10 +13,11 @@ const phonebookSchema = new mongoose.Schema({
   number: String,
 });
 const Phonebook = mongoose.model("Phonebook", phonebookSchema);
+// eslint-disable-next-line no-unused-expressions
 process.argv[3]
   ? mongoose
       .connect(url)
-      .then((result) => {
+      .then(() => {
         // console.log("connected");
 
         const phonebook = new Phonebook({
@@ -32,7 +34,7 @@ process.argv[3]
         return mongoose.connection.close();
       })
       .catch((err) => console.log(err))
-  : mongoose.connect(url).then((result) => {
+  : mongoose.connect(url).then(() => {
       console.log("phonebook:");
       Phonebook.find({}).then((result) => {
         result.forEach((phonebook) => {
